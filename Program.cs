@@ -2,6 +2,7 @@
 using System.Threading;
 using IrcDotNet;
 using Microsoft.Extensions.Configuration;
+using TwitchBotConsole.Configuration;
 
 namespace TwitchBotConsole
 {
@@ -16,12 +17,14 @@ namespace TwitchBotConsole
             var builder = new ConfigurationBuilder();
             builder.AddUserSecrets<Program>();
 
+            builder.AddJsonFile("appsettings.json");
+
             Configuration = builder.Build();
 
-            var username = "mediocre_dad_gamer";
-            var password = Configuration["Twitch:OAuthSecret"];
+            var twitchSettings = new TwitchSettings();
+            Configuration.GetSection("TwitchSettings").Bind(twitchSettings);
 
-            var server = "irc.chat.twitch.tv";
+            var password = Configuration["Twitch:OAuthSecret"];
 
             using (var client = new IrcDotNet.TwitchIrcClient())
             {
@@ -35,29 +38,29 @@ namespace TwitchBotConsole
                     {
                         client.Connected += (sender2, e2) => connectedEvent.Set();
                         client.Registered += (sender2, e2) => registeredEvent.Set();
-                        client.Connect(server, false,
+                        client.Connect(twitchSettings.Server, false,
                             new IrcUserRegistrationInfo()
                             {
-                                NickName = username,
+                                NickName = twitchSettings.Username,
                                 Password = password,
-                                UserName = username
+                                UserName = twitchSettings.Username
                             });
                         if (!connectedEvent.Wait(10000))
                         {
-                            Console.WriteLine("Connection to '{0}' timed out.", server);
+                            Console.WriteLine("Connection to '{0}' timed out.", twitchSettings.Server);
                             return;
                         }
                     }
-                    Console.Out.WriteLine("Now connected to '{0}'.", server);
+                    Console.Out.WriteLine("Now connected to '{0}'.", twitchSettings.Server);
                     client.SendRawMessage("JOIN #mediocre_dad_gamer");
                     if (!registeredEvent.Wait(10000))
                     {
-                        Console.WriteLine("Could not register to '{0}'.", server);
+                        Console.WriteLine("Could not register to '{0}'.", twitchSettings.Server);
                         return;
                     }
                 }
 
-                Console.Out.WriteLine("Now registered to '{0}' as '{1}'.", server, username);
+                Console.Out.WriteLine("Now registered to '{0}' as '{1}'.", twitchSettings.Server, twitchSettings.Username);
                 HandleEventLoop(client);
             }
         }
