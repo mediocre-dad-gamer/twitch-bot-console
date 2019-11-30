@@ -52,7 +52,7 @@ namespace TwitchBotConsole
                         }
                     }
                     Console.Out.WriteLine("Now connected to '{0}'.", twitchSettings.Server);
-                    client.SendRawMessage("JOIN #mediocre_dad_gamer");
+                    client.SendRawMessage($"JOIN #{twitchSettings.ChannelToJoin}");
                     if (!registeredEvent.Wait(10000))
                     {
                         Console.WriteLine("Could not register to '{0}'.", twitchSettings.Server);
