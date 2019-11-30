@@ -1,16 +1,23 @@
 ﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using IrcDotNet;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using TwitchBotConsole.Configuration;
 
 namespace TwitchBotConsole
 {
     class Program
     {
-        public static IConfigurationRoot Configuration { get; set; }
+        private static IConfigurationRoot Configuration { get; set; }
 
-        public static string OAuthToken;
+        private static readonly HttpClient _webClient = new HttpClient();
+
+        private static TwitchSettings _twitchSettings { get; set; }
 
         static void Main(string[] args)
         {
@@ -20,11 +27,11 @@ namespace TwitchBotConsole
             builder.AddJsonFile("appsettings.json");
 
             Configuration = builder.Build();
-
             var twitchSettings = new TwitchSettings();
             Configuration.GetSection("TwitchSettings").Bind(twitchSettings);
-
+            _twitchSettings = twitchSettings;
             var password = Configuration["Twitch:OAuthSecret"];
+            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
 
             using (var client = new IrcDotNet.TwitchIrcClient())
             {
@@ -38,29 +45,29 @@ namespace TwitchBotConsole
                     {
                         client.Connected += (sender2, e2) => connectedEvent.Set();
                         client.Registered += (sender2, e2) => registeredEvent.Set();
-                        client.Connect(twitchSettings.Server, false,
+                        client.Connect(_twitchSettings.Server, false,
                             new IrcUserRegistrationInfo()
                             {
-                                NickName = twitchSettings.Username,
+                                NickName = _twitchSettings.Username,
                                 Password = password,
-                                UserName = twitchSettings.Username
+                                UserName = _twitchSettings.Username
                             });
                         if (!connectedEvent.Wait(10000))
                         {
-                            Console.WriteLine("Connection to '{0}' timed out.", twitchSettings.Server);
+                            Console.WriteLine("Connection to '{0}' timed out.", _twitchSettings.Server);
                             return;
                         }
                     }
-                    Console.Out.WriteLine("Now connected to '{0}'.", twitchSettings.Server);
-                    client.SendRawMessage($"JOIN #{twitchSettings.ChannelToJoin}");
+                    Console.Out.WriteLine("Now connected to '{0}'.", _twitchSettings.Server);
+                    client.SendRawMessage($"JOIN #{_twitchSettings.ChannelToJoin}");
                     if (!registeredEvent.Wait(10000))
                     {
-                        Console.WriteLine("Could not register to '{0}'.", twitchSettings.Server);
+                        Console.WriteLine("Could not register to '{0}'.", _twitchSettings.Server);
                         return;
                     }
                 }
 
-                Console.Out.WriteLine("Now registered to '{0}' as '{1}'.", twitchSettings.Server, twitchSettings.Username);
+                Console.Out.WriteLine("Now registered to '{0}' as '{1}'.", _twitchSettings.Server, _twitchSettings.Username);
                 HandleEventLoop(client);
             }
         }
@@ -134,11 +141,35 @@ namespace TwitchBotConsole
             var channel = (IrcChannel)sender;
             if (e.Source is IrcUser)
             {
-                // Read message.
                 Console.WriteLine("[{0}]({1}): {2}.", channel.Name, e.Source.Name, e.Text);
-                if (e.Text == "hello")
+                try
                 {
-                    channel.Client.SendRawMessage($"privmsg {channel.Name} :Hi there {e.Source.Name}");
+                    var requestBody = new
+                    {
+                        Message = e.Text,
+                        Username = e.Source.Name
+                    };
+
+                    var serializedBody = JsonConvert.SerializeObject(requestBody);
+
+                    var postRequest = _webClient.PostAsync(
+                        "https://localhost:5001/process",
+                        new StringContent(serializedBody, Encoding.UTF8, "application/json"));
+
+                    Task.WaitAll(postRequest);
+
+                    var asyncResult = postRequest.Result.Content.ReadAsStringAsync();
+
+                    Task.WaitAll(asyncResult);
+
+                    if (!string.IsNullOrEmpty(asyncResult.Result))
+                    {
+                        channel.Client.SendRawMessage($"privmsg #{_twitchSettings.ChannelToJoin} :{asyncResult.Result}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Write(ex);
                 }
             }
             else
