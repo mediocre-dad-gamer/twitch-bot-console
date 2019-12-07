@@ -1,3 +1,5 @@
+using TwitchBotConsole.Configuration.Attributes;
+
 namespace TwitchBotConsole.Configuration
 {
     public class TwitchSettings
@@ -5,5 +7,8 @@ namespace TwitchBotConsole.Configuration
         public string Username { get; set; }
         public string ChannelToJoin { get; set; }
         public string Server { get; set; }
+
+        [ConfigSecret("Twitch:OAuthSecret")]
+        public string Password { get; set; }
     }
 }
