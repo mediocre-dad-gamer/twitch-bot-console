@@ -54,20 +54,20 @@ namespace TwitchBotConsole
                             });
                         if (!connectedEvent.Wait(10000))
                         {
-                            Console.WriteLine("Connection to '{0}' timed out.", _twitchSettings.Server);
+                            Console.WriteLine($"Connection to '{_twitchSettings.Server}' timed out.");
                             return;
                         }
                     }
-                    Console.Out.WriteLine("Now connected to '{0}'.", _twitchSettings.Server);
+                    Console.Out.WriteLine($"Now connected to '{_twitchSettings.Server}'.");
                     client.SendRawMessage($"JOIN #{_twitchSettings.ChannelToJoin}");
                     if (!registeredEvent.Wait(10000))
                     {
-                        Console.WriteLine("Could not register to '{0}'.", _twitchSettings.Server);
+                        Console.WriteLine($"Could not register to '{_twitchSettings.Server}'.");
                         return;
                     }
                 }
 
-                Console.Out.WriteLine("Now registered to '{0}' as '{1}'.", _twitchSettings.Server, _twitchSettings.Username);
+                Console.Out.WriteLine($"Now registered to '{_twitchSettings.Server}' as '{_twitchSettings.Username}'.");
                 HandleEventLoop(client);
             }
         }
@@ -114,7 +114,7 @@ namespace TwitchBotConsole
             e.Channel.MessageReceived -= IrcClient_Channel_MessageReceived;
             e.Channel.NoticeReceived -= IrcClient_Channel_NoticeReceived;
 
-            Console.WriteLine("You left the channel {0}.", e.Channel.Name);
+            Console.WriteLine($"You left the channel {e.Channel.Name}.");
         }
 
         private static void IrcClient_LocalUser_JoinedChannel(object sender, IrcChannelEventArgs e)
@@ -126,14 +126,14 @@ namespace TwitchBotConsole
             e.Channel.MessageReceived += IrcClient_Channel_MessageReceived;
             e.Channel.NoticeReceived += IrcClient_Channel_NoticeReceived;
 
-            Console.WriteLine("You joined the channel {0}.", e.Channel.Name);
+            Console.WriteLine($"You joined the channel {e.Channel.Name}.");
         }
 
         private static void IrcClient_Channel_NoticeReceived(object sender, IrcMessageEventArgs e)
         {
             var channel = (IrcChannel)sender;
 
-            Console.WriteLine("[{0}] Notice: {1}.", channel.Name, e.Text);
+            Console.WriteLine($"[{channel.Name}] Notice: {e.Text}.", channel.Name, e.Text);
         }
 
         private static void IrcClient_Channel_MessageReceived(object sender, IrcMessageEventArgs e)
@@ -141,7 +141,7 @@ namespace TwitchBotConsole
             var channel = (IrcChannel)sender;
             if (e.Source is IrcUser)
             {
-                Console.WriteLine("[{0}]({1}): {2}.", channel.Name, e.Source.Name, e.Text);
+                Console.WriteLine($"[{channel.Name}]({e.Source.Name}): {e.Text}.");
                 try
                 {
                     var requestBody = new
@@ -174,20 +174,20 @@ namespace TwitchBotConsole
             }
             else
             {
-                Console.WriteLine("[{0}]({1}) Message: {2}.", channel.Name, e.Source.Name, e.Text);
+                Console.WriteLine($"[{channel.Name}]({e.Source.Name}) Message: {e.Text}.");
             }
         }
 
         private static void IrcClient_Channel_UserLeft(object sender, IrcChannelUserEventArgs e)
         {
             var channel = (IrcChannel)sender;
-            Console.WriteLine("[{0}] User {1} left the channel.", channel.Name, e.ChannelUser.User.NickName);
+            Console.WriteLine($"[{channel.Name}] User {e.ChannelUser.User.NickName} left the channel.");
         }
 
         private static void IrcClient_Channel_UserJoined(object sender, IrcChannelUserEventArgs e)
         {
             var channel = (IrcChannel)sender;
-            Console.WriteLine("[{0}] User {1} joined the channel.", channel.Name, e.ChannelUser.User.NickName);
+            Console.WriteLine($"[{channel.Name}] User {e.ChannelUser.User.NickName} joined the channel.");
         }
 
         private static void IrcClient_LocalUser_MessageReceived(object sender, IrcMessageEventArgs e)
@@ -197,18 +197,18 @@ namespace TwitchBotConsole
             if (e.Source is IrcUser)
             {
                 // Read message.
-                Console.WriteLine("({0}): {1}.", e.Source.Name, e.Text);
+                Console.WriteLine($"({e.Source.Name}): {e.Text}.");
             }
             else
             {
-                Console.WriteLine("({0}) Message: {1}.", e.Source.Name, e.Text);
+                Console.WriteLine($"({e.Source.Name}) Message: {e.Text}.");
             }
         }
 
         private static void IrcClient_LocalUser_NoticeReceived(object sender, IrcMessageEventArgs e)
         {
             var localUser = (IrcLocalUser)sender;
-            Console.WriteLine("Notice: {0}.", e.Text);
+            Console.WriteLine($"Notice: {e.Text}.");
         }
 
         private static void IrcClient_Disconnected(object sender, EventArgs e)
