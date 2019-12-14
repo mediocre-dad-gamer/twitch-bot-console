@@ -1,0 +1,12 @@
+version: '3.5'
+services:
+  twitch-bot-console:
+    container_name: twitch-bot-console
+    image: twitch-bot-console
+    build: .
+    networks:
+        - twitch_net
+networks:
+    twitch_net:
+        name: twitch_net
+        driver: bridge

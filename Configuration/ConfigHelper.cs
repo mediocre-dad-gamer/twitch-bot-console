@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using TwitchBotConsole.Configuration.Attributes;
 
 namespace TwitchBotConsole.Configuration
@@ -28,7 +29,6 @@ namespace TwitchBotConsole.Configuration
         public static void BuildConfiguration()
         {
             var builder = new ConfigurationBuilder();
-            builder.AddUserSecrets<Program>();
             builder.AddJsonFile("appsettings.json");
 
             var environment = EnvironmentHelper.GetEnvironmentString();
@@ -38,7 +38,31 @@ namespace TwitchBotConsole.Configuration
                 builder.AddJsonFile($"appsettings.{environment}.json", optional: true);
             }
 
+            if (EnvironmentHelper.IsLocal())
+            {
+                builder.AddUserSecrets<Program>();
+            }
+
             Configuration = builder.Build();
+
+            if (!EnvironmentHelper.IsLocal())
+            {
+                using (var store = new X509Store(StoreLocation.CurrentUser))
+                {
+                    store.Open(OpenFlags.ReadOnly);
+                    var certs = store.Certificates
+                        .Find(X509FindType.FindByThumbprint,
+                            Configuration["AzureADCertThumbprint"], false);
+
+                    builder.AddAzureKeyVault(
+                        $"https://{Configuration["KeyVaultName"].ToLowerInvariant()}.vault.azure.net/",
+                        Configuration["AzureADApplicationId"],
+                        certs.OfType<X509Certificate2>().Single());
+
+                    store.Close();
+                }
+                Configuration = builder.Build();
+            }
         }
 
         private static void PopulateSecrets<T>(T configObject)

@@ -331,3 +331,7 @@ ASALocalRun/
 
 # Visual Studio Tasks/Launch
 .vscode
+
+# Certs
+*.cer
+*.pfx
