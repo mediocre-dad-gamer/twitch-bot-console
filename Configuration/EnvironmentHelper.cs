@@ -11,6 +11,7 @@ namespace TwitchBotConsole
         private static List<string> _validEnvironments = new List<string>
         {
             "local",
+            "docker",
             "qa",
             "staging",
             "production"
@@ -25,6 +26,12 @@ namespace TwitchBotConsole
 
         public static void SetEnvironment(string environment)
         {
+            if (string.IsNullOrEmpty(environment))
+            {
+                environment = LOCAL_ENVIRONMENT;
+                Console.WriteLine($"WARNING: No environment was set. Defaulting to {LOCAL_ENVIRONMENT}.");
+            }
+
             if (!IsValidEnvironment(environment))
             {
                 throw new ArgumentException(

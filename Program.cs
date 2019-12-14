@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Threading;
-using System.Threading.Tasks;
-using IrcDotNet;
 using TwitchBotConsole.BotApi;
 using TwitchBotConsole.Configuration;
 using TwitchBotConsole.Irc;

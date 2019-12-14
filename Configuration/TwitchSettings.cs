@@ -8,7 +8,7 @@ namespace TwitchBotConsole.Configuration
         public string ChannelToJoin { get; set; }
         public string Server { get; set; }
 
-        [ConfigSecret("Twitch:OAuthSecret")]
+        [ConfigSecret("TwitchOAuthSecret")]
         public string Password { get; set; }
     }
 }
